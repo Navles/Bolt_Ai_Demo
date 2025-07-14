@@ -1,5 +1,6 @@
 'use client';
 import React, { useState } from 'react';
+import dynamic from 'next/dynamic';
 import {
   Box,
   Grid,
@@ -16,11 +17,14 @@ import {
 import Sidebar from './components/Layout/Sidebar';
 import Header from './components/Layout/Header';
 import StatsCard from './components/Dashboard/StatsCard';
-import CostChart from './components/Dashboard/CostChart';
 import RecentActivity from './components/Dashboard/RecentActivity';
 import EstimationForm from './components/Estimation/EstimationForm';
 import POForm from './components/PurchaseOrders/POForm';
 import CRSReport from './components/Reports/CRSReport';
+
+const CostChart = dynamic(() => import('./components/Dashboard/CostChart'), {
+  ssr: false
+});
 
 const drawerWidth = 280;
 
