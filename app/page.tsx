@@ -21,6 +21,7 @@ import RecentActivity from './components/Dashboard/RecentActivity';
 import EstimationForm from './components/Estimation/EstimationForm';
 import POForm from './components/PurchaseOrders/POForm';
 import CRSReport from './components/Reports/CRSReport';
+import { useEstimation } from './context/EstimationContext';
 
 const CostChart = dynamic(() => import('./components/Dashboard/CostChart'), {
   ssr: false
@@ -30,6 +31,9 @@ const drawerWidth = 280;
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const { getProjectSummary } = useEstimation();
+  
+  const projectSummary = getProjectSummary();
 
   const renderContent = () => {
     switch (activeTab) {
@@ -47,7 +51,7 @@ export default function Home() {
               <Grid item xs={12} sm={6} md={3}>
                 <StatsCard
                   title="Total Contract Value"
-                  value="₹8.5L"
+                  value={`₹${((projectSummary.totalEstimate || 0) / 100000).toFixed(1)}L`}
                   change={5.2}
                   icon={<AccountBalance />}
                   color="primary"
@@ -56,7 +60,7 @@ export default function Home() {
               <Grid item xs={12} sm={6} md={3}>
                 <StatsCard
                   title="Committed Costs"
-                  value="₹4.24L"
+                  value={`₹${((projectSummary.totalCommitted || 0) / 100000).toFixed(1)}L`}
                   change={-2.1}
                   icon={<ShoppingCart />}
                   color="warning"
@@ -65,7 +69,7 @@ export default function Home() {
               <Grid item xs={12} sm={6} md={3}>
                 <StatsCard
                   title="Actual Costs"
-                  value="₹4.37L"
+                  value={`₹${((projectSummary.totalActual || 0) / 100000).toFixed(1)}L`}
                   change={8.3}
                   icon={<TrendingUp />}
                   color="success"

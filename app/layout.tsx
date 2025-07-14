@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import ThemeRegistry from './ThemeRegistry';
 import { AppProvider } from './context/AppContext';
+import { EstimationProvider } from './context/EstimationContext';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -21,7 +22,9 @@ export default function RootLayout({
       <body className={inter.className}>
         <ThemeRegistry>
           <AppProvider>
-            {children}
+            <EstimationProvider>
+              {children}
+            </EstimationProvider>
           </AppProvider>
         </ThemeRegistry>
       </body>
