@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, ReactNode, useEffect } from
 
 export interface EstimationItem {
   id: string;
+  productCode?: string;
   description: string;
   quantity: number;
   unit: string;

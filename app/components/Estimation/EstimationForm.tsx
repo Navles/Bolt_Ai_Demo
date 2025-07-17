@@ -23,10 +23,12 @@ import {
 } from '@mui/material';
 import { Add, Delete, Save, Send } from '@mui/icons-material';
 import { useForm, useFieldArray } from 'react-hook-form';
+import ProductDatabase, { ProductItem } from './ProductDatabase';
 import { useEstimation } from '../../context/EstimationContext';
 import { useApp } from '../../context/AppContext';
 
 interface EstimationItem {
+  productCode?: string;
   description: string;
   quantity: number;
   unit: string;
@@ -60,12 +62,13 @@ export default function EstimationForm() {
   const { currentProject, user } = useApp();
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
+  const [showProductDatabase, setShowProductDatabase] = useState(false);
 
   const { register, control, handleSubmit, watch, setValue, reset } = useForm<EstimationFormData>({
     defaultValues: {
       projectId: currentProject?.id || '',
       estimatedBy: user?.name || '',
-      items: [{ description: '', quantity: 1, unit: '', unitCost: 0, totalCost: 0 }]
+      items: [{ productCode: '', description: '', quantity: 1, unit: '', unitCost: 0, totalCost: 0 }]
     }
   });
 
@@ -78,6 +81,20 @@ export default function EstimationForm() {
 
   const calculateTotal = (quantity: number, unitCost: number) => {
     return quantity * unitCost;
+  };
+
+  const handleProductSelection = (selectedProducts: ProductItem[]) => {
+    const currentItems = getValues('items');
+    const newItems = selectedProducts.map(product => ({
+      productCode: product.productCode,
+      description: product.description,
+      quantity: 1,
+      unit: product.unit,
+      unitCost: product.standardRate,
+      totalCost: product.standardRate,
+    }));
+    
+    replace([...currentItems, ...newItems]);
   };
 
   const getTotalEstimation = () => {
@@ -113,7 +130,7 @@ export default function EstimationForm() {
         category: '',
         vendor: '',
         notes: '',
-        items: [{ description: '', quantity: 1, unit: '', unitCost: 0, totalCost: 0 }]
+        items: [{ productCode: '', description: '', quantity: 1, unit: '', unitCost: 0, totalCost: 0 }]
       });
     } catch (error) {
       console.error('Error saving estimation:', error);
@@ -204,19 +221,29 @@ export default function EstimationForm() {
               <Typography variant="h6" fontWeight={600}>
                 Cost Items
               </Typography>
-              <Button
-                startIcon={<Add />}
-                onClick={() => append({ description: '', quantity: 1, unit: '', unitCost: 0, totalCost: 0 })}
-                variant="outlined"
-              >
-                Add Item
-              </Button>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Button
+                  startIcon={<Add />}
+                  onClick={() => setShowProductDatabase(true)}
+                  variant="contained"
+                >
+                  Add from Database
+                </Button>
+                <Button
+                  startIcon={<Add />}
+                  onClick={() => append({ productCode: '', description: '', quantity: 1, unit: '', unitCost: 0, totalCost: 0 })}
+                  variant="outlined"
+                >
+                  Add Custom Item
+                </Button>
+              </Box>
             </Box>
 
             <TableContainer component={Paper} sx={{ mb: 3 }}>
               <Table>
                 <TableHead>
                   <TableRow>
+                    <TableCell>Product Code</TableCell>
                     <TableCell>Description</TableCell>
                     <TableCell>Quantity</TableCell>
                     <TableCell>Unit</TableCell>
@@ -228,6 +255,22 @@ export default function EstimationForm() {
                 <TableBody>
                   {fields.map((field, index) => (
                     <TableRow key={field.id}>
+                      <TableCell>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          {...register(`items.${index}.productCode`)}
+                          placeholder="Auto-generated"
+                          InputProps={{
+                            readOnly: !!watchedItems[index]?.productCode,
+                            sx: watchedItems[index]?.productCode ? { 
+                              bgcolor: 'primary.light', 
+                              color: 'primary.contrastText',
+                              fontWeight: 600,
+                            } : {}
+                          }}
+                        />
+                      </TableCell>
                       <TableCell>
                         <TextField
                           fullWidth
@@ -340,6 +383,12 @@ export default function EstimationForm() {
           </form>
         </CardContent>
       </Card>
+
+      <ProductDatabase
+        open={showProductDatabase}
+        onClose={() => setShowProductDatabase(false)}
+        onSelectItems={handleProductSelection}
+      />
 
       <Snackbar
         open={showSuccess}
