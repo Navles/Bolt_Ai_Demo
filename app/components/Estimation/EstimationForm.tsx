@@ -28,12 +28,14 @@ import { useEstimation } from '../../context/EstimationContext';
 import { useApp } from '../../context/AppContext';
 
 interface EstimationItem {
+  id?: string;
   productCode?: string;
   description: string;
   quantity: number;
   unit: string;
   unitCost: number;
   totalCost: number;
+  costHead?: string;
 }
 
 interface EstimationFormData {
@@ -64,56 +66,86 @@ export default function EstimationForm() {
   const [showError, setShowError] = useState(false);
   const [showProductDatabase, setShowProductDatabase] = useState(false);
 
-  const { register, control, handleSubmit, watch, setValue, reset } = useForm<EstimationFormData>({
+  const { register, control, handleSubmit, watch, setValue, reset, getValues } = useForm<EstimationFormData>({
     defaultValues: {
       projectId: currentProject?.id || '',
       estimatedBy: user?.name || '',
+      costHead: '',
+      category: '',
+      vendor: '',
+      notes: '',
       items: [{ productCode: '', description: '', quantity: 1, unit: '', unitCost: 0, totalCost: 0 }]
     }
   });
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove, replace } = useFieldArray({
     control,
     name: 'items'
   });
 
-  const { getValues, setValue, replace } = useForm<EstimationFormData>({
-    defaultValues: {
-      projectId: currentProject?.id || '',
-      estimatedBy: user?.name || '',
-      items: [{ productCode: '', description: '', quantity: 1, unit: '', unitCost: 0, totalCost: 0 }]
-    }
-  });
-
   const watchedItems = watch('items');
+  const watchedCostHead = watch('costHead');
 
   const calculateTotal = (quantity: number, unitCost: number) => {
     return quantity * unitCost;
   };
 
   const handleProductSelection = (selectedProducts: ProductItem[]) => {
-    const currentItems = getValues('items');
+    console.log('Selected products from database:', selectedProducts);
     
-    // Filter out empty items if they exist
+    const currentItems = getValues('items');
+    console.log('Current form items:', currentItems);
+    
+    // Filter out empty items
     const nonEmptyItems = currentItems.filter(item => 
-      item.description.trim() !== '' || item.productCode?.trim() !== ''
+      item.description.trim() !== '' && item.quantity > 0
     );
     
-    const newItems = selectedProducts.map(product => ({
+    // Convert selected products to form items
+    const newItems: EstimationItem[] = selectedProducts.map((product, index) => ({
+      id: `db-${Date.now()}-${index}`,
       productCode: product.productCode,
       description: product.description,
       quantity: 1,
       unit: product.unit,
       unitCost: product.standardRate,
       totalCost: product.standardRate,
+      costHead: watchedCostHead || '',
     }));
     
-    // If no existing items or only empty items, replace with new items
-    if (nonEmptyItems.length === 0) {
-      replace(newItems);
-    } else {
-      replace([...nonEmptyItems, ...newItems]);
-    }
+    console.log('New items to add:', newItems);
+    
+    // Combine existing non-empty items with new items
+    const allItems = [...nonEmptyItems, ...newItems];
+    console.log('All items after combination:', allItems);
+    
+    // Replace all items in the form
+    replace(allItems);
+    
+    setShowProductDatabase(false);
+  };
+
+  const addCustomItem = () => {
+    append({
+      id: `custom-${Date.now()}`,
+      productCode: '',
+      description: '',
+      quantity: 1,
+      unit: '',
+      unitCost: 0,
+      totalCost: 0,
+      costHead: watchedCostHead || '',
+    });
+  };
+
+  const updateItemTotal = (index: number, field: 'quantity' | 'unitCost', value: number) => {
+    const currentItems = getValues('items');
+    const item = currentItems[index];
+    const quantity = field === 'quantity' ? value : item.quantity;
+    const unitCost = field === 'unitCost' ? value : item.unitCost;
+    const total = calculateTotal(quantity, unitCost);
+    setValue(`items.${index}.totalCost`, total);
+    return total;
   };
 
   const getTotalEstimation = () => {
@@ -122,10 +154,14 @@ export default function EstimationForm() {
 
   const onSubmit = (data: EstimationFormData, isDraft = false) => {
     try {
+      console.log('Form data before processing:', data);
+      
       // Filter out empty items and ensure proper structure
       const validItems = data.items.filter(item => 
         item.description.trim() !== '' && item.quantity > 0
       );
+
+      console.log('Valid items after filtering:', validItems);
 
       if (validItems.length === 0) {
         setShowError(true);
@@ -134,12 +170,19 @@ export default function EstimationForm() {
 
       // Process items with proper IDs and structure
       const processedItems = validItems.map((item, index) => ({
-        ...item,
-        id: `${Date.now()}-${index}`,
-        costHead: data.costHead, // Ensure cost head is included
+        id: item.id || `${Date.now()}-${index}`,
+        productCode: item.productCode || `CUSTOM-${Date.now()}-${index}`,
+        description: item.description,
+        quantity: item.quantity,
+        unit: item.unit,
+        unitCost: item.unitCost,
+        totalCost: item.totalCost,
+        costHead: data.costHead,
       }));
 
-      addEstimation({
+      console.log('Processed items for submission:', processedItems);
+
+      const estimationData = {
         projectId: data.projectId,
         costHead: data.costHead,
         category: data.category,
@@ -147,10 +190,12 @@ export default function EstimationForm() {
         estimatedBy: data.estimatedBy,
         items: processedItems,
         notes: data.notes,
-        status: isDraft ? 'draft' : 'submitted',
-      });
+        status: isDraft ? 'draft' : 'submitted' as const,
+      };
 
-      console.log('Submitted estimation with items:', processedItems); // Debug log
+      console.log('Final estimation data:', estimationData);
+
+      addEstimation(estimationData);
       setShowSuccess(true);
       
       // Reset form after successful submission
@@ -257,18 +302,26 @@ export default function EstimationForm() {
                   startIcon={<Add />}
                   onClick={() => setShowProductDatabase(true)}
                   variant="contained"
+                  disabled={!watchedCostHead}
                 >
                   Add from Database
                 </Button>
                 <Button
                   startIcon={<Add />}
-                  onClick={() => append({ productCode: '', description: '', quantity: 1, unit: '', unitCost: 0, totalCost: 0 })}
+                  onClick={addCustomItem}
                   variant="outlined"
+                  disabled={!watchedCostHead}
                 >
                   Add Custom Item
                 </Button>
               </Box>
             </Box>
+
+            {!watchedCostHead && (
+              <Alert severity="warning" sx={{ mb: 3 }}>
+                Please select a Cost Head first before adding items.
+              </Alert>
+            )}
 
             <TableContainer component={Paper} sx={{ mb: 3 }}>
               <Table>
@@ -293,8 +346,12 @@ export default function EstimationForm() {
                           {...register(`items.${index}.productCode`)}
                           placeholder="Auto-generated"
                           InputProps={{
-                            readOnly: !!watchedItems[index]?.productCode,
-                            sx: watchedItems[index]?.productCode ? { 
+                            readOnly: !!watchedItems[index]?.productCode?.startsWith('MAT-') || 
+                                     !!watchedItems[index]?.productCode?.startsWith('LAB-') ||
+                                     !!watchedItems[index]?.productCode?.startsWith('EQP-') ||
+                                     !!watchedItems[index]?.productCode?.startsWith('TRN-') ||
+                                     !!watchedItems[index]?.productCode?.startsWith('SRV-'),
+                            sx: (watchedItems[index]?.productCode?.includes('-')) ? { 
                               bgcolor: 'primary.light', 
                               color: 'primary.contrastText',
                               fontWeight: 600,
@@ -306,7 +363,7 @@ export default function EstimationForm() {
                         <TextField
                           fullWidth
                           size="small"
-                          {...register(`items.${index}.description`)}
+                          {...register(`items.${index}.description`, { required: true })}
                         />
                       </TableCell>
                       <TableCell>
@@ -316,10 +373,11 @@ export default function EstimationForm() {
                           type="number"
                           {...register(`items.${index}.quantity`, {
                             valueAsNumber: true,
+                            required: true,
+                            min: 0.01,
                             onChange: (e) => {
                               const quantity = parseFloat(e.target.value) || 0;
-                              const unitCost = watchedItems[index]?.unitCost || 0;
-                              setValue(`items.${index}.totalCost`, calculateTotal(quantity, unitCost));
+                              updateItemTotal(index, 'quantity', quantity);
                             }
                           })}
                         />
@@ -328,7 +386,7 @@ export default function EstimationForm() {
                         <TextField
                           fullWidth
                           size="small"
-                          {...register(`items.${index}.unit`)}
+                          {...register(`items.${index}.unit`, { required: true })}
                         />
                       </TableCell>
                       <TableCell>
@@ -338,10 +396,11 @@ export default function EstimationForm() {
                           type="number"
                           {...register(`items.${index}.unitCost`, {
                             valueAsNumber: true,
+                            required: true,
+                            min: 0,
                             onChange: (e) => {
                               const unitCost = parseFloat(e.target.value) || 0;
-                              const quantity = watchedItems[index]?.quantity || 0;
-                              setValue(`items.${index}.totalCost`, calculateTotal(quantity, unitCost));
+                              updateItemTotal(index, 'unitCost', unitCost);
                             }
                           })}
                         />
@@ -377,11 +436,13 @@ export default function EstimationForm() {
               </Table>
             </TableContainer>
 
-            <Box sx={{ mb: 3, p: 2, bgcolor: 'primary.main', color: 'white', borderRadius: 2 }}>
-              <Typography variant="h6" fontWeight={600}>
-                Total Estimation: ₹{getTotalEstimation().toLocaleString()}
-              </Typography>
-            </Box>
+            {fields.length > 0 && getTotalEstimation() > 0 && (
+              <Box sx={{ mb: 3, p: 2, bgcolor: 'primary.main', color: 'white', borderRadius: 2 }}>
+                <Typography variant="h6" fontWeight={600}>
+                  Total Estimation: ₹{getTotalEstimation().toLocaleString()}
+                </Typography>
+              </Box>
+            )}
 
             <Grid container spacing={3}>
               <Grid item xs={12}>
@@ -400,6 +461,7 @@ export default function EstimationForm() {
                 variant="outlined" 
                 startIcon={<Save />}
                 onClick={handleSaveDraft}
+                disabled={!watchedCostHead || fields.length === 0}
               >
                 Save Draft
               </Button>
@@ -407,6 +469,7 @@ export default function EstimationForm() {
                 variant="contained" 
                 startIcon={<Send />}
                 onClick={handleSubmitEstimation}
+                disabled={!watchedCostHead || fields.length === 0}
               >
                 Submit Estimation
               </Button>
@@ -437,7 +500,7 @@ export default function EstimationForm() {
         onClose={() => setShowError(false)}
       >
         <Alert onClose={() => setShowError(false)} severity="error" sx={{ width: '100%' }}>
-          Error saving estimation. Please try again.
+          Error saving estimation. Please ensure all required fields are filled and try again.
         </Alert>
       </Snackbar>
     </>

@@ -16,18 +16,16 @@ import {
   Paper,
   Box,
   Chip,
-  IconButton,
   Typography,
   InputAdornment,
   Tabs,
   Tab,
   Alert,
+  Checkbox,
 } from '@mui/material';
 import {
   Search,
   Add,
-  Edit,
-  Delete,
   Code,
   Description,
   Category,
@@ -165,7 +163,7 @@ export default function ProductDatabase({
   const [filteredProducts, setFilteredProducts] = useState<ProductItem[]>(MOCK_PRODUCTS);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedProductIds, setSelectedProductIds] = useState<string[]>(selectedItems);
+  const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
   const [tabValue, setTabValue] = useState(0);
 
   const categories = ['all', ...Array.from(new Set(products.map(p => p.category)))];
@@ -173,6 +171,16 @@ export default function ProductDatabase({
   useEffect(() => {
     filterProducts();
   }, [searchTerm, selectedCategory, products]);
+
+  useEffect(() => {
+    // Reset selections when dialog opens
+    if (open) {
+      setSelectedProductIds([]);
+      setSearchTerm('');
+      setSelectedCategory('all');
+      setTabValue(0);
+    }
+  }, [open]);
 
   const filterProducts = () => {
     let filtered = products.filter(product => product.isActive);
@@ -212,9 +220,9 @@ export default function ProductDatabase({
 
   const handleConfirmSelection = () => {
     const selectedProducts = products.filter(p => selectedProductIds.includes(p.id));
-    console.log('Selected products from database:', selectedProducts); // Debug log
+    console.log('Confirming selection of products:', selectedProducts);
     onSelectItems(selectedProducts);
-    setSelectedProductIds([]); // Clear selection
+    setSelectedProductIds([]);
     onClose();
   };
 
@@ -283,22 +291,20 @@ export default function ProductDatabase({
       <DialogTitle>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="h6">Product Database</Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <TextField
-              size="small"
-              placeholder="Search by code or description..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Search />
-                  </InputAdornment>
-                ),
-              }}
-              sx={{ width: 300 }}
-            />
-          </Box>
+          <TextField
+            size="small"
+            placeholder="Search by code or description..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search />
+                </InputAdornment>
+              ),
+            }}
+            sx={{ width: 300 }}
+          />
         </Box>
       </DialogTitle>
 
@@ -333,13 +339,11 @@ export default function ProductDatabase({
                 <TableHead>
                   <TableRow>
                     <TableCell padding="checkbox">
-                      <Button
-                        size="small"
-                        onClick={handleSelectAll}
-                        variant={selectedProductIds.length === filteredProducts.length ? 'contained' : 'outlined'}
-                      >
-                        {selectedProductIds.length === filteredProducts.length ? 'Deselect All' : 'Select All'}
-                      </Button>
+                      <Checkbox
+                        indeterminate={selectedProductIds.length > 0 && selectedProductIds.length < filteredProducts.length}
+                        checked={filteredProducts.length > 0 && selectedProductIds.length === filteredProducts.length}
+                        onChange={handleSelectAll}
+                      />
                     </TableCell>
                     <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -374,13 +378,10 @@ export default function ProductDatabase({
                       sx={{ cursor: 'pointer' }}
                     >
                       <TableCell padding="checkbox">
-                        <Button
-                          size="small"
-                          variant={selectedProductIds.includes(product.id) ? 'contained' : 'outlined'}
-                          color={selectedProductIds.includes(product.id) ? 'primary' : 'inherit'}
-                        >
-                          {selectedProductIds.includes(product.id) ? 'Selected' : 'Select'}
-                        </Button>
+                        <Checkbox
+                          checked={selectedProductIds.includes(product.id)}
+                          onChange={() => handleProductToggle(product.id)}
+                        />
                       </TableCell>
                       <TableCell>
                         <Typography variant="body2" fontWeight={600} color="primary.main">

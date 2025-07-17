@@ -87,7 +87,9 @@ export function EstimationProvider({ children }: { children: ReactNode }) {
     const savedEstimations = localStorage.getItem('estimations');
     if (savedEstimations) {
       try {
-        setEstimations(JSON.parse(savedEstimations));
+        const parsed = JSON.parse(savedEstimations);
+        console.log('Loaded estimations from localStorage:', parsed);
+        setEstimations(parsed);
       } catch (error) {
         console.error('Error loading estimations from localStorage:', error);
       }
@@ -96,18 +98,24 @@ export function EstimationProvider({ children }: { children: ReactNode }) {
 
   // Save estimations to localStorage whenever they change
   useEffect(() => {
-    localStorage.setItem('estimations', JSON.stringify(estimations));
+    if (estimations.length > 0) {
+      console.log('Saving estimations to localStorage:', estimations);
+      localStorage.setItem('estimations', JSON.stringify(estimations));
+    }
   }, [estimations]);
 
   const addEstimation = (estimationData: Omit<Estimation, 'id' | 'createdAt' | 'updatedAt' | 'totalAmount'>) => {
+    console.log('Adding estimation with data:', estimationData);
+    
     // Ensure items have proper structure with product codes
     const processedItems = estimationData.items.map((item, index) => ({
       ...item,
       id: item.id || `${Date.now()}-${index}`,
+      productCode: item.productCode || `CUSTOM-${Date.now()}-${index}`,
       costHead: estimationData.costHead, // Ensure cost head is set on each item
     }));
     
-    const totalAmount = estimationData.items.reduce((sum, item) => sum + item.totalCost, 0);
+    const totalAmount = processedItems.reduce((sum, item) => sum + item.totalCost, 0);
     const newEstimation: Estimation = {
       ...estimationData,
       items: processedItems,
@@ -117,8 +125,12 @@ export function EstimationProvider({ children }: { children: ReactNode }) {
       totalAmount,
     };
     
-    console.log('Adding estimation:', newEstimation); // Debug log
-    setEstimations(prev => [...prev, newEstimation]);
+    console.log('Final estimation to be added:', newEstimation);
+    setEstimations(prev => {
+      const updated = [...prev, newEstimation];
+      console.log('Updated estimations array:', updated);
+      return updated;
+    });
   };
 
   const updateEstimation = (id: string, updates: Partial<Estimation>) => {
@@ -143,7 +155,9 @@ export function EstimationProvider({ children }: { children: ReactNode }) {
   };
 
   const getEstimationsByProject = (projectId: string) => {
-    return estimations.filter(est => est.projectId === projectId);
+    const projectEstimations = estimations.filter(est => est.projectId === projectId);
+    console.log(`Estimations for project ${projectId}:`, projectEstimations);
+    return projectEstimations;
   };
 
   const getTotalsByCostHead = () => {
@@ -156,6 +170,7 @@ export function EstimationProvider({ children }: { children: ReactNode }) {
       }
     });
 
+    console.log('Totals by cost head:', totals);
     return totals;
   };
 
@@ -188,11 +203,14 @@ export function EstimationProvider({ children }: { children: ReactNode }) {
     });
 
     // Filter out rows with no data
-    return reportData.filter(row => 
+    const filteredData = reportData.filter(row => 
       row.estimate !== null || 
       row.committed !== null || 
       row.actual !== null
     );
+
+    console.log('CRS Report Data:', filteredData);
+    return filteredData;
   };
 
   const getProjectSummary = () => {
