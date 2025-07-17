@@ -89,25 +89,39 @@ export default function CRSReport() {
     );
 
     if (originalCostHead) {
-      // Get all estimations with this cost head
-      const relevantEstimations = projectEstimations.filter(
-        est => est.costHead === originalCostHead && (est.status === 'approved' || est.status === 'submitted')
+      // Get all approved/submitted estimations for current project
+      const relevantEstimations = estimations.filter(
+        est => est.projectId === (currentProject?.id || '') && 
+               est.costHead === originalCostHead && 
+               (est.status === 'approved' || est.status === 'submitted')
       );
 
-      // Collect all items from these estimations
+      console.log(`Items for ${costHeadDisplay}:`, relevantEstimations); // Debug log
+
+      // Collect all items from these estimations with proper structure
       relevantEstimations.forEach(estimation => {
-        estimation.items.forEach(item => {
-          items.push({
-            ...item,
-            estimationId: estimation.id,
-            vendor: estimation.vendor,
-            category: estimation.category,
-            estimatedBy: estimation.estimatedBy,
+        if (estimation.items && estimation.items.length > 0) {
+          estimation.items.forEach(item => {
+            items.push({
+              id: item.id,
+              productCode: item.productCode || 'CUSTOM',
+              description: item.description,
+              quantity: item.quantity,
+              unit: item.unit,
+              unitCost: item.unitCost,
+              totalCost: item.totalCost,
+              estimationId: estimation.id,
+              vendor: estimation.vendor || 'N/A',
+              category: estimation.category,
+              estimatedBy: estimation.estimatedBy,
+            });
           });
+        }
         });
       });
     }
 
+    console.log(`Final items for ${costHeadDisplay}:`, items); // Debug log
     return items;
   };
 
@@ -325,6 +339,7 @@ export default function CRSReport() {
                                   <Table size="small">
                                     <TableHead>
                                       <TableRow>
+                                        <TableCell sx={{ fontWeight: 600 }}>Product Code</TableCell>
                                         <TableCell sx={{ fontWeight: 600 }}>Item Description</TableCell>
                                         <TableCell sx={{ fontWeight: 600 }}>Quantity</TableCell>
                                         <TableCell sx={{ fontWeight: 600 }}>Unit</TableCell>
@@ -338,6 +353,17 @@ export default function CRSReport() {
                                     <TableBody>
                                       {items.map((item, itemIndex) => (
                                         <TableRow key={`${item.id}-${itemIndex}`} hover>
+                                          <TableCell>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                              <Chip 
+                                                label={item.productCode} 
+                                                size="small" 
+                                                color="primary" 
+                                                variant="outlined"
+                                                sx={{ fontFamily: 'monospace', fontWeight: 600 }}
+                                              />
+                                            </Box>
+                                          </TableCell>
                                           <TableCell sx={{ fontWeight: 500 }}>
                                             {item.description}
                                           </TableCell>

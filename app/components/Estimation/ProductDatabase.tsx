@@ -212,7 +212,9 @@ export default function ProductDatabase({
 
   const handleConfirmSelection = () => {
     const selectedProducts = products.filter(p => selectedProductIds.includes(p.id));
+    console.log('Selected products from database:', selectedProducts); // Debug log
     onSelectItems(selectedProducts);
+    setSelectedProductIds([]); // Clear selection
     onClose();
   };
 

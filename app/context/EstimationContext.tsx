@@ -100,14 +100,24 @@ export function EstimationProvider({ children }: { children: ReactNode }) {
   }, [estimations]);
 
   const addEstimation = (estimationData: Omit<Estimation, 'id' | 'createdAt' | 'updatedAt' | 'totalAmount'>) => {
+    // Ensure items have proper structure with product codes
+    const processedItems = estimationData.items.map((item, index) => ({
+      ...item,
+      id: item.id || `${Date.now()}-${index}`,
+      costHead: estimationData.costHead, // Ensure cost head is set on each item
+    }));
+    
     const totalAmount = estimationData.items.reduce((sum, item) => sum + item.totalCost, 0);
     const newEstimation: Estimation = {
       ...estimationData,
+      items: processedItems,
       id: `EST-${Date.now()}`,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       totalAmount,
     };
+    
+    console.log('Adding estimation:', newEstimation); // Debug log
     setEstimations(prev => [...prev, newEstimation]);
   };
 

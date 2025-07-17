@@ -77,6 +77,14 @@ export default function EstimationForm() {
     name: 'items'
   });
 
+  const { getValues, setValue, replace } = useForm<EstimationFormData>({
+    defaultValues: {
+      projectId: currentProject?.id || '',
+      estimatedBy: user?.name || '',
+      items: [{ productCode: '', description: '', quantity: 1, unit: '', unitCost: 0, totalCost: 0 }]
+    }
+  });
+
   const watchedItems = watch('items');
 
   const calculateTotal = (quantity: number, unitCost: number) => {
@@ -85,6 +93,12 @@ export default function EstimationForm() {
 
   const handleProductSelection = (selectedProducts: ProductItem[]) => {
     const currentItems = getValues('items');
+    
+    // Filter out empty items if they exist
+    const nonEmptyItems = currentItems.filter(item => 
+      item.description.trim() !== '' || item.productCode?.trim() !== ''
+    );
+    
     const newItems = selectedProducts.map(product => ({
       productCode: product.productCode,
       description: product.description,
@@ -94,7 +108,12 @@ export default function EstimationForm() {
       totalCost: product.standardRate,
     }));
     
-    replace([...currentItems, ...newItems]);
+    // If no existing items or only empty items, replace with new items
+    if (nonEmptyItems.length === 0) {
+      replace(newItems);
+    } else {
+      replace([...nonEmptyItems, ...newItems]);
+    }
   };
 
   const getTotalEstimation = () => {
@@ -103,10 +122,21 @@ export default function EstimationForm() {
 
   const onSubmit = (data: EstimationFormData, isDraft = false) => {
     try {
-      // Generate unique IDs for items
-      const itemsWithIds = data.items.map((item, index) => ({
+      // Filter out empty items and ensure proper structure
+      const validItems = data.items.filter(item => 
+        item.description.trim() !== '' && item.quantity > 0
+      );
+
+      if (validItems.length === 0) {
+        setShowError(true);
+        return;
+      }
+
+      // Process items with proper IDs and structure
+      const processedItems = validItems.map((item, index) => ({
         ...item,
         id: `${Date.now()}-${index}`,
+        costHead: data.costHead, // Ensure cost head is included
       }));
 
       addEstimation({
@@ -115,11 +145,12 @@ export default function EstimationForm() {
         category: data.category,
         vendor: data.vendor,
         estimatedBy: data.estimatedBy,
-        items: itemsWithIds,
+        items: processedItems,
         notes: data.notes,
         status: isDraft ? 'draft' : 'submitted',
       });
 
+      console.log('Submitted estimation with items:', processedItems); // Debug log
       setShowSuccess(true);
       
       // Reset form after successful submission
