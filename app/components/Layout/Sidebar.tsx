@@ -36,6 +36,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: <Dashboard /> },
     { id: 'estimation', label: 'Cost Estimation', icon: <Assignment /> },
+    { id: 'cost-change-notes', label: 'Cost Change Notes', icon: <Assessment /> },
     { id: 'purchase-orders', label: 'Purchase Orders', icon: <ShoppingCart /> },
     { id: 'reports', label: 'Financial Reports', icon: <Assessment /> },
     { id: 'projects', label: 'Projects', icon: <Business /> },

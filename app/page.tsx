@@ -21,6 +21,9 @@ import RecentActivity from './components/Dashboard/RecentActivity';
 import EstimationForm from './components/Estimation/EstimationForm';
 import POForm from './components/PurchaseOrders/POForm';
 import CRSReport from './components/Reports/CRSReport';
+import CCNForm from './components/CostChangeNote/CCNForm';
+import CCNList from './components/CostChangeNote/CCNList';
+import CCNReport from './components/Reports/CCNReport';
 import { useEstimation } from './context/EstimationContext';
 
 const CostChart = dynamic(() => import('./components/Dashboard/CostChart'), {
@@ -107,6 +110,29 @@ export default function Home() {
               Create and manage cost estimations for project components
             </Typography>
             <EstimationForm />
+          </Box>
+        );
+      
+      case 'cost-change-notes':
+        return (
+          <Box>
+            <Typography variant="h4" component="h1" gutterBottom fontWeight={700}>
+              Cost Change Notes
+            </Typography>
+            <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+              Track and manage cost variations and changes
+            </Typography>
+            <Grid container spacing={3}>
+              <Grid item xs={12}>
+                <CCNForm />
+              </Grid>
+              <Grid item xs={12}>
+                <CCNList />
+              </Grid>
+              <Grid item xs={12}>
+                <CCNReport />
+              </Grid>
+            </Grid>
           </Box>
         );
       
