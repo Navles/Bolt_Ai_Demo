@@ -351,17 +351,6 @@ export default function CRSReport() {
                                     <TableBody>
                                       {items.map((item, itemIndex) => (
                                         <TableRow key={`${item.id}-${itemIndex}`} hover>
-                                          <TableCell>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                              <Chip 
-                                                label={item.productCode} 
-                                                size="small" 
-                                                color="primary" 
-                                                variant="outlined"
-                                                sx={{ fontFamily: 'monospace', fontWeight: 600 }}
-                                              />
-                                            </Box>
-                                          </TableCell>
                                           <TableCell sx={{ fontWeight: 500 }}>
                                             {item.description}
                                           </TableCell>
