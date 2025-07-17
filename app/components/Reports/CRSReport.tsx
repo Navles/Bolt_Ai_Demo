@@ -117,7 +117,6 @@ export default function CRSReport() {
             });
           });
         }
-        });
       });
     }
 
@@ -339,7 +338,6 @@ export default function CRSReport() {
                                   <Table size="small">
                                     <TableHead>
                                       <TableRow>
-                                        <TableCell sx={{ fontWeight: 600 }}>Product Code</TableCell>
                                         <TableCell sx={{ fontWeight: 600 }}>Item Description</TableCell>
                                         <TableCell sx={{ fontWeight: 600 }}>Quantity</TableCell>
                                         <TableCell sx={{ fontWeight: 600 }}>Unit</TableCell>
