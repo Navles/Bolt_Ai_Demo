@@ -146,36 +146,6 @@ export default function EstimationForm() {
     console.log('Items to import:', importedItems);
     
     // Combine existing non-empty items with imported items
-  const handleExcelImport = (importedItems: any[]) => {
-    console.log('Imported items from Excel:', importedItems);
-    
-    const currentItems = getValues('items');
-    console.log('Current form items:', currentItems);
-    
-    // Filter out empty items
-    const nonEmptyItems = currentItems.filter(item => 
-      item.description.trim() !== '' && item.quantity > 0
-    );
-    
-    console.log('Non-empty current items:', nonEmptyItems);
-    console.log('Items to import:', importedItems);
-    
-    // Combine existing non-empty items with imported items
-  const handleExcelImport = (importedItems: any[]) => {
-    console.log('Imported items from Excel:', importedItems);
-    
-    const currentItems = getValues('items');
-    console.log('Current form items:', currentItems);
-    
-    // Filter out empty items
-    const nonEmptyItems = currentItems.filter(item => 
-      item.description.trim() !== '' && item.quantity > 0
-    );
-    
-    console.log('Non-empty current items:', nonEmptyItems);
-    console.log('Items to import:', importedItems);
-    
-    // Combine existing non-empty items with imported items
     const allItems = [...nonEmptyItems, ...importedItems];
     console.log('All items after combination:', allItems);
     
