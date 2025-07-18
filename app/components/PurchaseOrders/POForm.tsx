@@ -24,7 +24,9 @@ import {
 import { Add, Delete, Save, Send } from '@mui/icons-material';
 import { useForm, useFieldArray } from 'react-hook-form';
 import ProductDatabase, { ProductItem } from './ProductDatabase';
-import POExcelUpload from './ExcelUpload';
+import ExcelUpload from './ExcelUpload';
+import ExcelUpload from './ExcelUpload';
+import ExcelUpload from './ExcelUpload';
 import { useEstimation } from '../../context/EstimationContext';
 import { useApp } from '../../context/AppContext';
 
@@ -66,6 +68,8 @@ export default function EstimationForm() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
   const [showProductDatabase, setShowProductDatabase] = useState(false);
+  const [showExcelUpload, setShowExcelUpload] = useState(false);
+  const [showExcelUpload, setShowExcelUpload] = useState(false);
   const [showExcelUpload, setShowExcelUpload] = useState(false);
 
   const { register, control, handleSubmit, watch, setValue, reset, getValues } = useForm<EstimationFormData>({
@@ -131,24 +135,49 @@ export default function EstimationForm() {
     console.log('Imported items from Excel:', importedItems);
     
     const currentItems = getValues('items');
+    console.log('Current form items:', currentItems);
     
     // Filter out empty items
     const nonEmptyItems = currentItems.filter(item => 
       item.description.trim() !== '' && item.quantity > 0
     );
     
-    // Convert imported items to estimation items format
-    const estimationItems: EstimationItem[] = importedItems.map(item => ({
-      description: item.description,
-      quantity: item.quantity,
-      unit: item.unit,
-      unitCost: item.unitCost,
-      totalCost: item.totalCost,
-      costHead: item.costHead || watchedCostHead || '',
-    }));
+    console.log('Non-empty current items:', nonEmptyItems);
+    console.log('Items to import:', importedItems);
     
     // Combine existing non-empty items with imported items
-    const allItems = [...nonEmptyItems, ...estimationItems];
+  const handleExcelImport = (importedItems: any[]) => {
+    console.log('Imported items from Excel:', importedItems);
+    
+    const currentItems = getValues('items');
+    console.log('Current form items:', currentItems);
+    
+    // Filter out empty items
+    const nonEmptyItems = currentItems.filter(item => 
+      item.description.trim() !== '' && item.quantity > 0
+    );
+    
+    console.log('Non-empty current items:', nonEmptyItems);
+    console.log('Items to import:', importedItems);
+    
+    // Combine existing non-empty items with imported items
+  const handleExcelImport = (importedItems: any[]) => {
+    console.log('Imported items from Excel:', importedItems);
+    
+    const currentItems = getValues('items');
+    console.log('Current form items:', currentItems);
+    
+    // Filter out empty items
+    const nonEmptyItems = currentItems.filter(item => 
+      item.description.trim() !== '' && item.quantity > 0
+    );
+    
+    console.log('Non-empty current items:', nonEmptyItems);
+    console.log('Items to import:', importedItems);
+    
+    // Combine existing non-empty items with imported items
+    const allItems = [...nonEmptyItems, ...importedItems];
+    console.log('All items after combination:', allItems);
     
     // Replace all items in the form
     replace(allItems);
@@ -524,10 +553,11 @@ export default function EstimationForm() {
         onSelectItems={handleProductSelection}
       />
 
-      <POExcelUpload
+      <ExcelUpload
         open={showExcelUpload}
         onClose={() => setShowExcelUpload(false)}
         onImport={handleExcelImport}
+        costHead={watchedCostHead}
       />
 
       <Snackbar
