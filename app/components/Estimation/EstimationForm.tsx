@@ -24,6 +24,7 @@ import {
 import { Add, Delete, Save, Send } from '@mui/icons-material';
 import { useForm, useFieldArray } from 'react-hook-form';
 import ProductDatabase, { ProductItem } from './ProductDatabase';
+import ExcelUpload from './ExcelUpload';
 import { useEstimation } from '../../context/EstimationContext';
 import { useApp } from '../../context/AppContext';
 
@@ -65,6 +66,7 @@ export default function EstimationForm() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
   const [showProductDatabase, setShowProductDatabase] = useState(false);
+  const [showExcelUpload, setShowExcelUpload] = useState(false);
 
   const { register, control, handleSubmit, watch, setValue, reset, getValues } = useForm<EstimationFormData>({
     defaultValues: {
@@ -123,6 +125,30 @@ export default function EstimationForm() {
     replace(allItems);
     
     setShowProductDatabase(false);
+  };
+
+  const handleExcelImport = (importedItems: any[]) => {
+    console.log('Imported items from Excel:', importedItems);
+    
+    const currentItems = getValues('items');
+    console.log('Current form items:', currentItems);
+    
+    // Filter out empty items
+    const nonEmptyItems = currentItems.filter(item => 
+      item.description.trim() !== '' && item.quantity > 0
+    );
+    
+    console.log('Non-empty current items:', nonEmptyItems);
+    console.log('Items to import:', importedItems);
+    
+    // Combine existing non-empty items with imported items
+    const allItems = [...nonEmptyItems, ...importedItems];
+    console.log('All items after combination:', allItems);
+    
+    // Replace all items in the form
+    replace(allItems);
+    
+    setShowExcelUpload(false);
   };
 
   const addCustomItem = () => {
@@ -308,6 +334,15 @@ export default function EstimationForm() {
                 </Button>
                 <Button
                   startIcon={<Add />}
+                  onClick={() => setShowExcelUpload(true)}
+                  variant="contained"
+                  color="secondary"
+                  disabled={!watchedCostHead}
+                >
+                  Upload Excel
+                </Button>
+                <Button
+                  startIcon={<Add />}
                   onClick={addCustomItem}
                   variant="outlined"
                   disabled={!watchedCostHead}
@@ -482,6 +517,13 @@ export default function EstimationForm() {
         open={showProductDatabase}
         onClose={() => setShowProductDatabase(false)}
         onSelectItems={handleProductSelection}
+      />
+
+      <ExcelUpload
+        open={showExcelUpload}
+        onClose={() => setShowExcelUpload(false)}
+        onImport={handleExcelImport}
+        costHead={watchedCostHead}
       />
 
       <Snackbar
