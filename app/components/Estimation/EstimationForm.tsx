@@ -25,6 +25,7 @@ import { Add, Delete, Save, Send } from '@mui/icons-material';
 import { useForm, useFieldArray } from 'react-hook-form';
 import ProductDatabase, { ProductItem } from './ProductDatabase';
 import ExcelUpload from './ExcelUpload';
+import ExcelUpload from './ExcelUpload';
 import { useEstimation } from '../../context/EstimationContext';
 import { useApp } from '../../context/AppContext';
 
@@ -66,6 +67,7 @@ export default function EstimationForm() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
   const [showProductDatabase, setShowProductDatabase] = useState(false);
+  const [showExcelUpload, setShowExcelUpload] = useState(false);
   const [showExcelUpload, setShowExcelUpload] = useState(false);
 
   const { register, control, handleSubmit, watch, setValue, reset, getValues } = useForm<EstimationFormData>({
@@ -127,6 +129,21 @@ export default function EstimationForm() {
     setShowProductDatabase(false);
   };
 
+  const handleExcelImport = (importedItems: any[]) => {
+    console.log('Imported items from Excel:', importedItems);
+    
+    const currentItems = getValues('items');
+    console.log('Current form items:', currentItems);
+    
+    // Filter out empty items
+    const nonEmptyItems = currentItems.filter(item => 
+      item.description.trim() !== '' && item.quantity > 0
+    );
+    
+    console.log('Non-empty current items:', nonEmptyItems);
+    console.log('Items to import:', importedItems);
+    
+    // Combine existing non-empty items with imported items
   const handleExcelImport = (importedItems: any[]) => {
     console.log('Imported items from Excel:', importedItems);
     
